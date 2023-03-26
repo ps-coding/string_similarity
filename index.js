@@ -1,6 +1,8 @@
+// IMPORTS FOR DEMO
 const fs = require("fs");
 const path = require("path");
 
+// MAIN FUNCTIONS
 function compare(longReference, shortSearch) {
   if (longReference === shortSearch) return 1;
 
@@ -81,11 +83,10 @@ function rank(input, options) {
       score: compare(input, options[i]),
     });
   }
-  return results.sort((a, b) => b.score - a.score);
+  return results.sort((a, b) => b.score - a.score).filter((a) => a.score > 0);
 }
 
-// Test rank()
-
+// DEMO
 const commonWords = fs
   .readFileSync(path.join(__dirname, "commonWords.txt"), "utf8")
   .trim()
@@ -97,9 +98,19 @@ const readline = require("readline").createInterface({
   output: process.stdout,
 });
 
+function prettyPrint(arr) {
+  let str = "";
+  for (let i = 0; i < arr.length; i++) {
+    str += arr[i].name + " (" + (arr[i].score * 100).toFixed(2) + "%)\n";
+  }
+  return str;
+}
+
 readline.question("Enter a word: ", (input) => {
   const ranked = rank(input, commonWords);
   const top = ranked.slice(0, 10);
-  console.log(top);
+  console.log("Top 10 results: ");
+  console.log(prettyPrint(top));
+  console.log("Total: " + ranked.length + " results");
   readline.close();
 });
