@@ -4,6 +4,9 @@ const path = require("path");
 
 // MAIN FUNCTIONS
 function compare(longReference, shortSearch) {
+  longReference = longReference.toLowerCase();
+  shortSearch = shortSearch.toLowerCase();
+
   if (longReference === shortSearch) return 1;
 
   if (longReference.length < shortSearch.length) {
@@ -33,6 +36,16 @@ function compare(longReference, shortSearch) {
   for (let i = 0; i < shortSearch.length; i++) {
     if (longReference[i + shiftS] === shortSearch[i]) {
       similarityS++;
+    } else if (
+      i + shiftS + 1 < longReference.length &&
+      longReference[i + shiftS + 1] === shortSearch[i]
+    ) {
+      similarityS += 0.7;
+    } else if (
+      i + shiftS + 2 < longReference.length &&
+      longReference[i + shiftS + 2] === shortSearch[i]
+    ) {
+      similarityS += 0.4;
     }
   }
   for (let i = 0; i < longReference.length; i++) {
@@ -56,6 +69,16 @@ function compare(longReference, shortSearch) {
   for (let i = 0; i < shortSearch.length; i++) {
     if (longReference[i] === shortSearch[i + shiftE]) {
       similarityE++;
+    } else if (
+      i + shiftE + 1 < shortSearch.length &&
+      longReference[i] === shortSearch[i + shiftE + 1]
+    ) {
+      similarityE += 0.7;
+    } else if (
+      i + shiftE + 2 < shortSearch.length &&
+      longReference[i] === shortSearch[i + shiftE + 2]
+    ) {
+      similarityE += 0.4;
     }
   }
   for (let i = 0; i < longReference.length; i++) {
@@ -70,8 +93,8 @@ function compare(longReference, shortSearch) {
 
   const similarity = Math.max(similarityS, similarityE);
 
-  return similarity < longReference.length
-    ? similarity / longReference.length
+  return similarity < 1.5 * longReference.length
+    ? similarity / (1.5 * longReference.length)
     : 1;
 }
 
@@ -92,7 +115,6 @@ const commonWords = fs
   .trim()
   .split("\n");
 
-// Get user input from terminal
 const readline = require("readline").createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -106,11 +128,35 @@ function prettyPrint(arr) {
   return str;
 }
 
-readline.question("Enter a word: ", (input) => {
-  const ranked = rank(input, commonWords);
-  const top = ranked.slice(0, 10);
-  console.log("Top 10 results: ");
-  console.log(prettyPrint(top));
-  console.log("Total: " + ranked.length + " results");
-  readline.close();
-});
+const cliRunner = () =>
+  readline.question("Enter a word/phrase/command: ", (input) => {
+    if (input === "exit") {
+      readline.close();
+      return;
+    }
+
+    const words = input.split(" ");
+
+    if (words.length == 1) {
+      const ranked = rank(input, commonWords);
+      const top = ranked.slice(0, 10);
+      console.log("Top 10 results: ");
+      console.log(prettyPrint(top));
+      console.log("Total: " + ranked.length + " results");
+      console.log("\n--------------------------");
+    } else {
+      let corrected = [];
+      for (let i = 0; i < words.length; i++) {
+        const ranked = rank(words[i], commonWords);
+        const top = ranked[0];
+        corrected.push(top.name);
+      }
+
+      console.log("Corrected: " + corrected.join(" "));
+      console.log("\n--------------------------");
+    }
+
+    cliRunner();
+  });
+
+cliRunner();
