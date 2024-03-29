@@ -130,7 +130,7 @@ function prettyPrint(arr) {
 
 const cliRunner = () =>
   readline.question("Enter a word/phrase/command: ", (input) => {
-    if (input === "exit") {
+    if (input.trim() === "") {
       readline.close();
       return;
     }
