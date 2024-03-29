@@ -93,8 +93,8 @@ function compare(longReference, shortSearch) {
 
   const similarity = Math.max(similarityS, similarityE);
 
-  return similarity < 1.5 * longReference.length
-    ? similarity / (1.5 * longReference.length)
+  return similarity < 1.2 * longReference.length
+    ? similarity / (1.2 * longReference.length)
     : 1;
 }
 
