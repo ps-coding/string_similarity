@@ -32,7 +32,7 @@ function compare(longReference, shortSearch) {
   ) {
     shiftS++;
   }
-  let similarityS = 0;
+  let similarityS = -0.2 * shiftS;
   for (let i = 0; i < shortSearch.length; i++) {
     if (longReference[i + shiftS] === shortSearch[i]) {
       similarityS++;
@@ -44,6 +44,16 @@ function compare(longReference, shortSearch) {
     } else if (
       i + shiftS + 2 < longReference.length &&
       longReference[i + shiftS + 2] === shortSearch[i]
+    ) {
+      similarityS += 0.4;
+    } else if (
+      i + 1 < shortSearch.length &&
+      longReference[i + shiftS] === shortSearch[i + 1]
+    ) {
+      similarityS += 0.7;
+    } else if (
+      i + 2 < shortSearch.length &&
+      longReference[i + shiftS] === shortSearch[i + 2]
     ) {
       similarityS += 0.4;
     }
@@ -65,7 +75,7 @@ function compare(longReference, shortSearch) {
   ) {
     shiftE++;
   }
-  let similarityE = 0;
+  let similarityE = -0.2 * shiftE;
   for (let i = 0; i < shortSearch.length; i++) {
     if (longReference[i] === shortSearch[i + shiftE]) {
       similarityE++;
@@ -77,6 +87,16 @@ function compare(longReference, shortSearch) {
     } else if (
       i + shiftE + 2 < shortSearch.length &&
       longReference[i] === shortSearch[i + shiftE + 2]
+    ) {
+      similarityE += 0.4;
+    } else if (
+      i + 1 < longReference.length &&
+      longReference[i + 1] === shortSearch[i + shiftE]
+    ) {
+      similarityE += 0.7;
+    } else if (
+      i + 2 < longReference.length &&
+      longReference[i + 2] === shortSearch[i + shiftE]
     ) {
       similarityE += 0.4;
     }
@@ -93,8 +113,8 @@ function compare(longReference, shortSearch) {
 
   const similarity = Math.max(similarityS, similarityE);
 
-  return similarity < 1.2 * longReference.length
-    ? similarity / (1.2 * longReference.length)
+  return similarity < longReference.length + shortSearch.length
+    ? similarity / (longReference.length + shortSearch.length)
     : 1;
 }
 
@@ -123,13 +143,76 @@ const readline = require("readline").createInterface({
 function prettyPrint(arr) {
   let str = "";
   for (let i = 0; i < arr.length; i++) {
-    str += arr[i].name + " (" + (arr[i].score * 100).toFixed(2) + "%)\n";
+    str +=
+      (i + 1).toString() +
+      ". " +
+      arr[i].name +
+      " (" +
+      (arr[i].score * 100).toFixed(2) +
+      "%)\n";
   }
-  return str;
+  return str.trim();
 }
 
-const cliRunner = () =>
-  readline.question("Enter a word/phrase/command: ", (input) => {
+let corrected = [];
+let original = [];
+
+const editor = () => {
+  readline.question("Edit word #", (input) => {
+    if (input.trim() === "") {
+      console.log("Final: " + corrected.join(" "));
+      console.log("\n");
+      cliRunner();
+      return;
+    }
+
+    const wordNum = parseInt(input);
+
+    if (isNaN(wordNum)) {
+      console.log("Invalid word number");
+      editor();
+      return;
+    }
+
+    if (wordNum < 1 || wordNum > corrected.length) {
+      console.log("Invalid word number");
+      editor();
+      return;
+    }
+
+    const idx = wordNum - 1;
+
+    const ranked = rank(original[idx], commonWords);
+    const top = ranked.slice(0, 10);
+
+    console.log("Top Results: ");
+    console.log(prettyPrint(top));
+
+    readline.question("Replace with #", (input) => {
+      const replaceNum = parseInt(input);
+
+      if (isNaN(replaceNum)) {
+        console.log("Invalid suggestion number");
+        editor();
+        return;
+      }
+
+      if (replaceNum < 1 || replaceNum > top.length) {
+        console.log("Invalid suggestion number");
+        editor();
+        return;
+      }
+
+      corrected[idx] = top[replaceNum - 1].name;
+
+      console.log("Draft: " + corrected.join(" "));
+      editor();
+    });
+  });
+};
+
+const cliRunner = () => {
+  readline.question("> ", (input) => {
     if (input.trim() === "") {
       readline.close();
       return;
@@ -140,23 +223,30 @@ const cliRunner = () =>
     if (words.length == 1) {
       const ranked = rank(input, commonWords);
       const top = ranked.slice(0, 10);
-      console.log("Top 10 results: ");
+      console.log("Top Results: ");
       console.log(prettyPrint(top));
       console.log("Total: " + ranked.length + " results");
-      console.log("\n--------------------------");
+      console.log("\n");
+
+      cliRunner();
     } else {
-      let corrected = [];
+      original = Array.from(words);
+      corrected = [];
       for (let i = 0; i < words.length; i++) {
         const ranked = rank(words[i], commonWords);
         const top = ranked[0];
         corrected.push(top.name);
       }
 
-      console.log("Corrected: " + corrected.join(" "));
-      console.log("\n--------------------------");
+      console.log("Draft: " + corrected.join(" "));
+      editor();
     }
-
-    cliRunner();
   });
+};
+
+console.clear();
+console.log(
+  "Enter a word for suggestions. Enter a sentence to edit the spelling. Press enter without typing any characters to exit."
+);
 
 cliRunner();
