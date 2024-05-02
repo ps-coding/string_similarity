@@ -15,8 +15,8 @@ function compare(longReference, shortSearch) {
     shortSearch = temp;
   }
 
-  var anythingSame = false;
-  for (var i = 0; i < shortSearch.length; i++) {
+  let anythingSame = false;
+  for (let i = 0; i < shortSearch.length; i++) {
     if (longReference.indexOf(shortSearch[i]) !== -1) {
       anythingSame = true;
       break;
@@ -32,6 +32,9 @@ function compare(longReference, shortSearch) {
   ) {
     shiftS++;
   }
+
+  if (shiftS == longReference.length) shiftS = 0;
+
   let similarityS = -0.2 * shiftS;
   for (let i = 0; i < shortSearch.length; i++) {
     if (longReference[i + shiftS] === shortSearch[i]) {
@@ -58,15 +61,6 @@ function compare(longReference, shortSearch) {
       similarityS += 0.4;
     }
   }
-  for (let i = 0; i < longReference.length; i++) {
-    let count = 0;
-    for (let j = 0; j < shortSearch.length; j++) {
-      if (longReference[i] === shortSearch[j]) {
-        count++;
-      }
-    }
-    similarityS += 0.5 * (count / shortSearch.length);
-  }
 
   let shiftE = 0;
   while (
@@ -75,6 +69,9 @@ function compare(longReference, shortSearch) {
   ) {
     shiftE++;
   }
+
+  if (shiftE == longReference.length) shiftE = 0;
+
   let similarityE = -0.2 * shiftE;
   for (let i = 0; i < shortSearch.length; i++) {
     if (longReference[i] === shortSearch[i + shiftE]) {
@@ -101,6 +98,9 @@ function compare(longReference, shortSearch) {
       similarityE += 0.4;
     }
   }
+
+  let similarity = Math.max(similarityS, similarityE);
+
   for (let i = 0; i < longReference.length; i++) {
     let count = 0;
     for (let j = 0; j < shortSearch.length; j++) {
@@ -108,14 +108,12 @@ function compare(longReference, shortSearch) {
         count++;
       }
     }
-    similarityE += 0.5 * (count / shortSearch.length);
+    similarity += 0.5 * (count / shortSearch.length);
   }
 
-  const similarity = Math.max(similarityS, similarityE);
+  similarity += (longReference.length - shortSearch.length) * -0.2;
 
-  return similarity < longReference.length + shortSearch.length
-    ? similarity / (longReference.length + shortSearch.length)
-    : 1;
+  return similarity / longReference.length / 1.1;
 }
 
 function rank(input, options) {
